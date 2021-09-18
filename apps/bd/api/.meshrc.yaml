@@ -1,0 +1,26 @@
+sources:
+  - name: Certificates
+    handler:
+      graphql:
+        endpoint: ./mock-schema/mock-certificates.graphql
+
+transforms:
+  - mock:
+      if: true
+      initializeStore: ./resolvers/certificates.query.ts#initializeStore
+      mocks:
+        - apply: Query.certificate
+          custom: ./resolvers/certificates.query.ts#certificate
+        - apply: Mutation.updateCertificate
+          custom: ./resolvers/certificates.mutation.ts#updateCertificate
+        - apply: Mutation.createCertificate
+          custom: ./resolvers/certificates.mutation.ts#createCertificate
+
+require:
+  - ts-node/register/transpile-only
+
+serve:
+  port: 5000
+  cors: { origin: http://localhost:4203 }
+  playground: true
+  browser: false

@@ -1,0 +1,197 @@
+"""
+Default queries for the most basic functionality.
+Need to be extended to fit user story requirements.
+"""
+type Query {
+  certificateSections: [CertificateSection!]!
+  certificateTypes: [CertificateType!]!
+  certificates: [Certificate!]!
+  certificate(id: ID!): CertificateResult!
+}
+
+"""
+Default mutation to be able to create and edit certificates.
+Need to be extended to fit user story requirements.
+"""
+type Mutation {
+  createCertificate(input: CertificateCreationInput): CertificateCreationResult
+  updateCertificate(id: ID!, input: CertificateUpdateInput!): CertificateUpdateResult
+}
+
+union CertificateResult = Certificate | CertificateNotFoundError
+type CertificateNotFoundError implements Error {
+  message: String!
+}
+
+union CertificateCreationResult = Certificate | CertificateCreationTypeNotExistingError
+type CertificateCreationTypeNotExistingError implements Error {
+  message: String!
+}
+
+union CertificateUpdateResult = Certificate | CertificateIdNotExistingError
+type CertificateIdNotExistingError implements Error {
+  message: String!
+}
+
+scalar Date
+scalar DateTime
+
+"""
+Common fields for configuration elements.
+"""
+interface CommonConfigurationEntity {
+  id: ID!
+  titles: [Title!]!
+}
+
+"""
+Common fields for business entities.
+"""
+interface CommonBusinessEntity {
+  created_at: DateTime!
+  created_by: User!
+  id: ID!
+}
+
+"""
+Common fields for the certificate properties
+"""
+interface CommonCertificateProperties {
+  property: Property!
+}
+
+"""
+Common fields for the error handlers
+Mandatory field is "message".
+If needed be, also add additional properties to better describe the error
+
+e.g.
+type UserRegisterInvalidInputError implements Error {
+  message: String!
+  loginErrorMessage: String
+  emailErrorMessage: String
+  passwordErrorMessage: String
+}
+"""
+interface Error {
+  message: String!
+}
+
+"""
+List of possible property types.
+Though they can be configured in the application configuration system they are hardcoded here,
+as we expect the values of them not to be changed, only extended with new types.
+"""
+enum PropertyType {
+  BOOLEAN
+  FLOAT
+  INTEGER
+  STRING
+  DATE
+}
+
+"""
+A SupplyOn portal user.
+"""
+type User {
+  sma_id: String!
+  first_name: String
+  last_name: String
+}
+
+"""
+Representation of a title in a specific language.
+"""
+type Title {
+  language: String!
+  value: String
+}
+
+"""
+A certificate section. Each certificate type belongs to one section.
+
+As changes to the section are versioned (e.g. if new properties are added) the version is reflected by the property
+"version".
+"""
+type CertificateSection implements CommonConfigurationEntity {
+  id: ID!
+  titles: [Title!]!
+}
+
+"""
+The type of a certificate. It is the combination of the actual certificate type name, like "IATF 16949", and its
+certificate version, like "2017". So "IATF 1649 2017" would be a certificate type.
+
+As changes to the type are versioned (e.g. if new properties are added) the version is reflected by the property "version".
+"""
+type CertificateType implements CommonConfigurationEntity {
+  config_version: Int!
+  id: ID!
+  properties: [Property!]!
+  section: CertificateSection!
+  titles: [Title!]! # combination of type and version
+  type: String! # e.g. IATF 16949 of IATF 16949 2017
+  version: String # e.g. 2017 of IATF 16949 2017
+}
+
+"""
+A property that is assigned to a CertificateType.
+"""
+type Property implements CommonConfigurationEntity {
+  id: ID!
+  titles: [Title!]!
+  type: PropertyType!
+  configuration: PropertyConfiguration
+}
+
+"""
+Defines the state of the property field
+"""
+type PropertyConfiguration {
+  autoFocus: Boolean
+  countChars: Boolean
+  readonly: Boolean
+  required: Boolean
+  multiline: Boolean
+}
+
+"""
+A concrete certificate instance of a seller.
+"""
+type Certificate implements CommonBusinessEntity {
+  created_at: DateTime!
+  created_by: User!
+  id: ID!
+  properties: [CertificatePropertiesVariants!]!
+  type: CertificateType!
+}
+
+"""
+A property variants belonging to a certificate.
+The Property contains the information about the types, validators etc.
+"""
+type CertificatePropertySimple implements CommonCertificateProperties {
+  property: Property!
+  value: String!
+}
+type CertificatePropertyDate implements CommonCertificateProperties {
+  property: Property!
+  date: Date!
+}
+
+union CertificatePropertiesVariants = CertificatePropertySimple | CertificatePropertyDate
+
+input CertificatePropertyValueInput {
+  property_id: ID!
+  value: String
+  date: Date
+}
+
+input CertificateCreationInput {
+  type_id: ID!
+  name: String!
+}
+
+input CertificateUpdateInput {
+  properties: [CertificatePropertyValueInput!]!
+}

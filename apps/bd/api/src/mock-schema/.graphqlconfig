@@ -1,0 +1,12 @@
+{
+  "name": "CMFE Gateway",
+  "schemaPath": "mock-certificates.graphql",
+  "extensions": {
+    "endpoints": {
+      "CMBE": {
+        "url": "http://localhost:5000",
+        "introspect": true
+      }
+    }
+  }
+}
